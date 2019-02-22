@@ -1,6 +1,7 @@
 import face_recognition
 import cv2
 
+
 # This is a demo of running face recognition on live video from your webcam. It's a little more complicated than the
 # other example, but it includes some basic performance tweaks to make things run a lot faster:
 #   1. Process each video frame at 1/4 resolution (though still display it at full resolution)
@@ -17,12 +18,16 @@ video_capture = cv2.VideoCapture(0)
 me_image = face_recognition.load_image_file("face/me.jpeg")
 me_face_encoding = face_recognition.face_encodings(me_image)[0]
 
+# overlay
+apple_image = cv2.imread('face/apple.png', -1)
+
+
 # Create arrays of known face encodings and their names
 known_face_encodings = [
     me_face_encoding,
 ]
 known_face_names = [
-    "King of Nothing",
+    "You are the apple of my eye",
 ]
 
 # Initialize some variables
@@ -62,7 +67,6 @@ while True:
 
     process_this_frame = not process_this_frame
 
-
     # Display the results
     for (top, right, bottom, left), name in zip(face_locations, face_names):
         # Scale back up face locations since the frame we detected in was scaled to 1/4 size
@@ -71,13 +75,31 @@ while True:
         bottom *= 4
         left *= 4
 
+        # Draw Apple
+        face_width = right - left
+        face_height = bottom - top
+
+        # print('face_width = ', face_width)
+
+        x_ratio = face_width / apple_image.shape[0]
+        y_ratio = face_height / apple_image.shape[1]
+        s_apple_image = cv2.resize(apple_image, (0, 0), fx=x_ratio, fy=y_ratio)
+        x_offset, y_offset = left, top
+        x1, x2 = x_offset, x_offset + s_apple_image.shape[1]
+        y1, y2 = y_offset, y_offset + s_apple_image.shape[0]
+        alpha = s_apple_image[:, :, 3] / 255
+
+        # merge two pics
+        for c in range(0, 3):
+            frame[y1:y2, x1:x2, c] = alpha * s_apple_image[:, :, c] + (1 - alpha) * frame[y1:y2, x1:x2, c]
+
         # Draw a box around the face
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+        # cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
 
         # Draw a label with a name below the face
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+        # cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
         font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (0, 0, 255), 1)
 
     # Display the resulting image
     cv2.imshow('Video', frame)
